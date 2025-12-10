@@ -37,6 +37,58 @@ export interface ApiKeys {
   openai: string;
 }
 
+// Keyboard Shortcuts
+export interface KeyboardShortcuts {
+  // Navigation shortcuts
+  board: string;
+  agent: string;
+  spec: string;
+  context: string;
+  tools: string;
+  settings: string;
+  profiles: string;
+  
+  // UI shortcuts
+  toggleSidebar: string;
+  
+  // Action shortcuts
+  addFeature: string;
+  addContextFile: string;
+  startNext: string;
+  newSession: string;
+  openProject: string;
+  projectPicker: string;
+  cyclePrevProject: string;
+  cycleNextProject: string;
+  addProfile: string;
+}
+
+// Default keyboard shortcuts
+export const DEFAULT_KEYBOARD_SHORTCUTS: KeyboardShortcuts = {
+  // Navigation
+  board: "K",
+  agent: "A",
+  spec: "D",
+  context: "C",
+  tools: "T",
+  settings: "S",
+  profiles: "M",
+  
+  // UI
+  toggleSidebar: "`",
+  
+  // Actions
+  addFeature: "N",
+  addContextFile: "F",
+  startNext: "G",
+  newSession: "N",
+  openProject: "O",
+  projectPicker: "P",
+  cyclePrevProject: "Q",
+  cycleNextProject: "E",
+  addProfile: "N",
+};
+
 export interface ImageAttachment {
   id: string;
   data: string; // base64 encoded image data
@@ -203,6 +255,9 @@ export interface AppState {
   // Profile Display Settings
   showProfilesOnly: boolean; // When true, hide model tweaking options and show only profile selection
 
+  // Keyboard Shortcuts
+  keyboardShortcuts: KeyboardShortcuts; // User-defined keyboard shortcuts
+
   // Project Analysis
   projectAnalysis: ProjectAnalysis | null;
   isAnalyzing: boolean;
@@ -302,6 +357,11 @@ export interface AppActions {
 
   // Profile Display Settings actions
   setShowProfilesOnly: (enabled: boolean) => void;
+
+  // Keyboard Shortcuts actions
+  setKeyboardShortcut: (key: keyof KeyboardShortcuts, value: string) => void;
+  setKeyboardShortcuts: (shortcuts: Partial<KeyboardShortcuts>) => void;
+  resetKeyboardShortcuts: () => void;
 
   // AI Profile actions
   addAIProfile: (profile: Omit<AIProfile, "id">) => void;
@@ -404,6 +464,7 @@ const initialState: AppState = {
   defaultSkipTests: false, // Default to TDD mode (tests enabled)
   useWorktrees: false, // Default to disabled (worktree feature is experimental)
   showProfilesOnly: false, // Default to showing all options (not profiles only)
+  keyboardShortcuts: DEFAULT_KEYBOARD_SHORTCUTS, // Default keyboard shortcuts
   aiProfiles: DEFAULT_AI_PROFILES,
   projectAnalysis: null,
   isAnalyzing: false,
@@ -907,6 +968,29 @@ export const useAppStore = create<AppState & AppActions>()(
       // Profile Display Settings actions
       setShowProfilesOnly: (enabled) => set({ showProfilesOnly: enabled }),
 
+      // Keyboard Shortcuts actions
+      setKeyboardShortcut: (key, value) => {
+        set({
+          keyboardShortcuts: {
+            ...get().keyboardShortcuts,
+            [key]: value,
+          },
+        });
+      },
+
+      setKeyboardShortcuts: (shortcuts) => {
+        set({
+          keyboardShortcuts: {
+            ...get().keyboardShortcuts,
+            ...shortcuts,
+          },
+        });
+      },
+
+      resetKeyboardShortcuts: () => {
+        set({ keyboardShortcuts: DEFAULT_KEYBOARD_SHORTCUTS });
+      },
+
       // AI Profile actions
       addAIProfile: (profile) => {
         const id = `profile-${Date.now()}-${Math.random()
@@ -985,6 +1069,7 @@ export const useAppStore = create<AppState & AppActions>()(
         defaultSkipTests: state.defaultSkipTests,
         useWorktrees: state.useWorktrees,
         showProfilesOnly: state.showProfilesOnly,
+        keyboardShortcuts: state.keyboardShortcuts,
         aiProfiles: state.aiProfiles,
         lastSelectedSessionByProject: state.lastSelectedSessionByProject,
       }),
