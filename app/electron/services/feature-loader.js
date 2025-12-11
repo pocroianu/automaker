@@ -384,20 +384,30 @@ class FeatureLoader {
    * @param {string} projectPath - Path to the project
    * @param {string} [summary] - Optional summary of what was done
    * @param {string} [error] - Optional error message if feature errored
+   * @param {string} [description] - Optional detailed description
+   * @param {string} [category] - Optional category/phase
+   * @param {string[]} [steps] - Optional array of implementation steps
    */
-  async updateFeatureStatus(featureId, status, projectPath, summary, error) {
+  async updateFeatureStatus(featureId, status, projectPath, summary, error, description, category, steps) {
     // Check if feature exists
     const existingFeature = await this.get(projectPath, featureId);
     
     if (!existingFeature) {
-      // Feature doesn't exist - create it
+      // Feature doesn't exist - create it with all required fields
       console.log(`[FeatureLoader] Feature ${featureId} not found - creating new feature`);
       const newFeature = {
         id: featureId,
         title: featureId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-        description: summary || '', // Use summary as description for display
+        description: description || summary || '', // Use provided description, fall back to summary
+        category: category || "Uncategorized",
+        steps: steps || [],
         status: status,
-        summary: summary || '',
+        images: [],
+        imagePaths: [],
+        skipTests: true,
+        model: "sonnet",
+        thinkingLevel: "none",
+        summary: summary || description || '',
         createdAt: new Date().toISOString(),
       };
       if (error !== undefined) {
@@ -405,7 +415,7 @@ class FeatureLoader {
       }
       await this.create(projectPath, newFeature);
       console.log(
-        `[FeatureLoader] Created feature ${featureId}: status=${status}${
+        `[FeatureLoader] Created feature ${featureId}: status=${status}, category=${category || "Uncategorized"}, steps=${steps?.length || 0}${
           summary ? `, summary="${summary}"` : ""
         }`
       );
@@ -421,6 +431,15 @@ class FeatureLoader {
         updates.description = summary;
       }
     }
+    if (description !== undefined) {
+      updates.description = description;
+    }
+    if (category !== undefined) {
+      updates.category = category;
+    }
+    if (steps !== undefined && Array.isArray(steps)) {
+      updates.steps = steps;
+    }
     if (error !== undefined) {
       updates.error = error;
     } else {
@@ -429,10 +448,21 @@ class FeatureLoader {
         updates.error = undefined;
       }
     }
+    
+    // Ensure required fields exist (for features created before this fix)
+    if (!existingFeature.category && !updates.category) updates.category = "Uncategorized";
+    if (!existingFeature.steps && !updates.steps) updates.steps = [];
+    if (!existingFeature.images) updates.images = [];
+    if (!existingFeature.imagePaths) updates.imagePaths = [];
+    if (existingFeature.skipTests === undefined) updates.skipTests = true;
+    if (!existingFeature.model) updates.model = "sonnet";
+    if (!existingFeature.thinkingLevel) updates.thinkingLevel = "none";
 
     await this.update(projectPath, featureId, updates);
     console.log(
       `[FeatureLoader] Updated feature ${featureId}: status=${status}${
+        category ? `, category="${category}"` : ""
+      }${steps ? `, steps=${steps.length}` : ""}${
         summary ? `, summary="${summary}"` : ""
       }`
     );

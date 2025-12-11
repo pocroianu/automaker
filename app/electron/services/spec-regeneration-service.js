@@ -368,24 +368,42 @@ class SpecRegenerationService {
       
       const options = {
         model: "claude-sonnet-4-20250514",
-        systemPrompt: `You are a feature management assistant. Your job is to read the app_spec.txt file and create feature entries based on the implementation_roadmap section.
+        systemPrompt: `You are a feature management assistant. Your job is to read the app_spec.txt file and create DETAILED, COMPREHENSIVE feature entries based on the implementation_roadmap section.
 
 **Your Task:**
-1. Read the .automaker/app_spec.txt file
+1. Read the .automaker/app_spec.txt file thoroughly
 2. Parse the implementation_roadmap section (it contains phases with features listed)
-3. For each feature listed in the roadmap, use the UpdateFeatureStatus tool to create a feature entry
-4. Set the initial status to "todo" for all features
-5. Extract a meaningful summary/description for each feature from the roadmap
+3. For EACH feature in the roadmap, use the UpdateFeatureStatus tool to create a detailed feature entry
+4. Set the initial status to "backlog" for all features
+
+**IMPORTANT - For each feature you MUST provide:**
+- **featureId**: A descriptive ID (lowercase, hyphens for spaces). Example: "user-authentication", "budget-tracking"
+- **status**: "backlog" for all new features
+- **description**: A DETAILED description (2-4 sentences) explaining what the feature does, its purpose, and key functionality
+- **category**: The phase from the roadmap (e.g., "Phase 1: Foundation", "Phase 2: Core Logic", "Phase 3: Polish")
+- **steps**: An array of 4-8 clear, actionable implementation steps. Each step should be specific and completable.
+- **summary**: A brief one-line summary of the feature
+
+**Example of a well-defined feature:**
+{
+  "featureId": "user-authentication",
+  "status": "backlog",
+  "description": "Implement secure user authentication system with email/password login, OAuth integration for Google and Facebook, password reset functionality, and session management. This forms the foundation for all user-specific features.",
+  "category": "Phase 1: Foundation",
+  "steps": [
+    "Set up authentication provider (NextAuth.js or similar)",
+    "Configure email/password authentication",
+    "Implement social login (Google, Facebook OAuth)",
+    "Create login and registration UI components",
+    "Add password reset flow with email verification",
+    "Implement session management and token refresh"
+  ],
+  "summary": "Secure authentication with email/password and social login"
+}
 
 **Feature Storage:**
 Features are stored in .automaker/features/{id}/feature.json - each feature has its own folder.
-Use the UpdateFeatureStatus tool to create features. The tool will handle creating the directory structure and feature.json file.
-
-**Important:**
-- Create features ONLY from the implementation_roadmap section
-- Use the UpdateFeatureStatus tool for each feature
-- Set status to "todo" initially
-- Use a descriptive featureId based on the feature name (lowercase, hyphens for spaces)`,
+Use the UpdateFeatureStatus tool to create features with ALL the fields above.`,
         maxTurns: 50,
         cwd: projectPath,
         mcpServers: {
@@ -400,15 +418,24 @@ Use the UpdateFeatureStatus tool to create features. The tool will handle creati
         abortController: abortController,
       };
       
-      const prompt = `Please read the .automaker/app_spec.txt file and create feature entries for all features listed in the implementation_roadmap section.
+      const prompt = `Please read the .automaker/app_spec.txt file and create DETAILED feature entries for ALL features listed in the implementation_roadmap section.
 
-For each feature in the roadmap:
-1. Use the UpdateFeatureStatus tool to create the feature
-2. Set status to "todo"
-3. Provide a clear summary/description based on what's in the roadmap
-4. Use a featureId that's descriptive and follows the pattern: lowercase with hyphens (e.g., "user-authentication", "payment-processing")
+**Your workflow:**
+1. Read the app_spec.txt file completely
+2. Identify ALL features from the implementation_roadmap section
+3. For EACH feature, call UpdateFeatureStatus with ALL required fields:
 
-Start by reading the app_spec.txt file to see the implementation roadmap.`;
+**Required for each UpdateFeatureStatus call:**
+- featureId: Descriptive ID (lowercase, hyphens). Example: "user-authentication"
+- status: "backlog"
+- description: 2-4 sentences explaining the feature in detail
+- category: The phase name (e.g., "Phase 1: Foundation", "Phase 2: Core Logic")
+- steps: Array of 4-8 specific implementation steps
+- summary: One-line summary
+
+**Do NOT create features with just a summary - each feature needs description, category, AND steps.**
+
+Start by reading the app_spec.txt file, then create each feature with full detail.`;
       
       const currentQuery = query({ prompt, options });
       execution.query = currentQuery;
