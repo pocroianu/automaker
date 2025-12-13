@@ -373,6 +373,7 @@ export interface AppState {
     string,
     {
       imagePath: string | null; // Path to background image in .automaker directory
+      imageVersion?: number; // Timestamp to bust browser cache when image is updated
       cardOpacity: number; // Opacity of cards (0-100)
       columnOpacity: number; // Opacity of columns (0-100)
       columnBorderEnabled: boolean; // Whether to show column borders
@@ -1335,6 +1336,8 @@ export const useAppStore = create<AppState & AppActions>()(
             [projectPath]: {
               ...existing,
               imagePath,
+              // Update imageVersion timestamp to bust browser cache when image changes
+              imageVersion: imagePath ? Date.now() : undefined,
             },
           },
         });
@@ -1535,6 +1538,7 @@ export const useAppStore = create<AppState & AppActions>()(
             [projectPath]: {
               ...existing,
               imagePath: null, // Only clear the image, preserve other settings
+              imageVersion: undefined, // Clear version when clearing image
             },
           },
         });

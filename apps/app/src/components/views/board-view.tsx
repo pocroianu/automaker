@@ -2006,7 +2006,11 @@ export function BoardView() {
                   backgroundSettings.imagePath
                 )}&projectPath=${encodeURIComponent(
                   currentProject?.path || ""
-                )})`,
+                )}${
+                  backgroundSettings.imageVersion
+                    ? `&v=${backgroundSettings.imageVersion}`
+                    : ""
+                })`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 backgroundRepeat: "no-repeat",
