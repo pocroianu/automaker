@@ -337,15 +337,6 @@ export function WorktreeSelector({
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {worktree.hasChanges && (
-                <DropdownMenuItem
-                  onClick={() => onCommit(worktree)}
-                  className="text-xs"
-                >
-                  <GitCommit className="w-3.5 h-3.5 mr-2" />
-                  Commit Changes ({worktree.changedFilesCount} file{worktree.changedFilesCount !== 1 ? "s" : ""})
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem
                 onClick={() => onCreateBranch(worktree)}
                 className="text-xs"
@@ -392,36 +383,15 @@ export function WorktreeSelector({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
-            {/* Pull latest changes */}
-            <DropdownMenuItem
-              onClick={() => handlePull(worktree)}
-              disabled={isPulling}
-              className="text-xs"
-            >
-              <Download className={cn("w-3.5 h-3.5 mr-2", isPulling && "animate-pulse")} />
-              {isPulling ? "Pulling..." : "Pull Latest"}
-            </DropdownMenuItem>
-            {/* Create new branch - only for main repo */}
-            {worktree.isMain && (
+            {/* Commit changes */}
+            {worktree.hasChanges && (
               <DropdownMenuItem
-                onClick={() => onCreateBranch(worktree)}
+                onClick={() => onCommit(worktree)}
                 className="text-xs"
               >
-                <GitBranchPlus className="w-3.5 h-3.5 mr-2" />
-                New Branch
+                <GitCommit className="w-3.5 h-3.5 mr-2" />
+                Commit Changes
               </DropdownMenuItem>
-            )}
-            {worktree.hasChanges && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onCommit(worktree)}
-                  className="text-xs"
-                >
-                  <GitCommit className="w-3.5 h-3.5 mr-2" />
-                  Commit Changes
-                </DropdownMenuItem>
-              </>
             )}
             {/* Show PR option if not on main branch, or if on main with changes */}
             {(worktree.branch !== "main" || worktree.hasChanges) && (

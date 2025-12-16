@@ -50,6 +50,7 @@ export function createPushHandler() {
         result: {
           branch: branchName,
           pushed: true,
+          message: `Successfully pushed ${branchName} to origin`,
         },
       });
     } catch (error) {
