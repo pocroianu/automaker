@@ -788,8 +788,14 @@ export function useBoardActions({
       return;
     }
 
+    // Sort by priority (lower number = higher priority, priority 1 is highest)
+    // This matches the auto mode service behavior for consistency
+    const sortedBacklog = [...backlogFeatures].sort(
+      (a, b) => (a.priority || 999) - (b.priority || 999)
+    );
+
     // Start only one feature per keypress (user must press again for next)
-    const featuresToStart = backlogFeatures.slice(0, 1);
+    const featuresToStart = sortedBacklog.slice(0, 1);
 
     for (const feature of featuresToStart) {
       // Only create worktrees if the feature is enabled

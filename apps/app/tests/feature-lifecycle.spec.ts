@@ -139,8 +139,15 @@ test.describe("Feature Lifecycle Tests", () => {
     // Perform the drag and drop using dnd-kit compatible method
     await dragAndDropWithDndKit(page, dragHandle, inProgressColumn);
 
-    // Wait for the feature to move to in_progress
-    await page.waitForTimeout(500);
+    // First verify that the drag succeeded by checking for in_progress status
+    // This helps diagnose if the drag-drop is working or not
+    await expect(async () => {
+      const featureData = JSON.parse(
+        fs.readFileSync(path.join(featuresDir, featureId, "feature.json"), "utf-8")
+      );
+      // Feature should be either in_progress (agent running) or waiting_approval (agent done)
+      expect(["in_progress", "waiting_approval"]).toContain(featureData.status);
+    }).toPass({ timeout: 15000 });
 
     // The mock agent should complete quickly (about 1.3 seconds based on the sleep times)
     // Wait for the feature to move to waiting_approval (manual review)
@@ -349,15 +356,16 @@ test.describe("Feature Lifecycle Tests", () => {
 
     await dragAndDropWithDndKit(page, dragHandle, inProgressColumn);
 
-    // Wait for the feature to be in in_progress
-    await page.waitForTimeout(500);
-
     // Verify feature file still exists and is readable
     const featureFilePath = path.join(featuresDir, testFeatureId, "feature.json");
     expect(fs.existsSync(featureFilePath)).toBe(true);
 
-    // Wait a bit for the agent to start
-    await page.waitForTimeout(1000);
+    // First verify that the drag succeeded by checking for in_progress status
+    await expect(async () => {
+      const featureData = JSON.parse(fs.readFileSync(featureFilePath, "utf-8"));
+      // Feature should be either in_progress (agent running) or waiting_approval (agent done)
+      expect(["in_progress", "waiting_approval"]).toContain(featureData.status);
+    }).toPass({ timeout: 15000 });
 
     // ==========================================================================
     // Step 3: Wait for the mock agent to complete (it's fast in mock mode)
@@ -421,17 +429,21 @@ test.describe("Feature Lifecycle Tests", () => {
     // Drag to in_progress to restart
     await dragAndDropWithDndKit(page, restartDragHandle, inProgressColumnRestart);
 
-    // Wait for the feature to be processed
-    await page.waitForTimeout(2000);
+    // Verify the feature file still exists
+    expect(fs.existsSync(featureFilePath)).toBe(true);
+
+    // First verify that the restart drag succeeded by checking for in_progress status
+    await expect(async () => {
+      const data = JSON.parse(fs.readFileSync(featureFilePath, "utf-8"));
+      // Feature should be either in_progress (agent running) or waiting_approval (agent done)
+      expect(["in_progress", "waiting_approval"]).toContain(data.status);
+    }).toPass({ timeout: 15000 });
 
     // Verify no "Feature not found" errors in console
     const featureNotFoundErrors = consoleErrors.filter(
       (err) => err.includes("not found") || err.includes("Feature")
     );
     expect(featureNotFoundErrors).toEqual([]);
-
-    // Verify the feature file still exists
-    expect(fs.existsSync(featureFilePath)).toBe(true);
 
     // Wait for the mock agent to complete and move to waiting_approval
     await expect(async () => {
