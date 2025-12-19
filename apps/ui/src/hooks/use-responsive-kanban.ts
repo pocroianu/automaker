@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAppStore } from "@/store/app-store";
 
 export interface ResponsiveKanbanConfig {
   columnWidth: number;
@@ -9,17 +8,13 @@ export interface ResponsiveKanbanConfig {
   padding: number;
 }
 
-// Sidebar dimensions (must match sidebar.tsx values)
-const SIDEBAR_COLLAPSED_WIDTH = 64; // w-16 = 64px
-const SIDEBAR_EXPANDED_WIDTH = 288; // w-72 = 288px (lg breakpoint)
-
 /**
  * Default configuration for responsive Kanban columns
  */
 const DEFAULT_CONFIG: ResponsiveKanbanConfig = {
   columnWidth: 288, // 18rem = 288px (w-72)
   columnMinWidth: 280, // Minimum column width - increased to ensure usability
-  columnMaxWidth: 400, // Maximum column width - increased for better scaling
+  columnMaxWidth: 360, // Maximum column width to ensure responsive scaling
   gap: 20, // gap-5 = 20px
   padding: 32, // px-4 on both sides = 32px
 };
@@ -48,23 +43,20 @@ export function useResponsiveKanban(
     ...config,
   };
 
-  // Get sidebar state from the store to account for its width
-  const sidebarOpen = useAppStore((state) => state.sidebarOpen);
-
   const calculateColumnWidth = useCallback(() => {
     if (typeof window === "undefined") {
       return DEFAULT_CONFIG.columnWidth;
     }
 
-    // Determine sidebar width based on viewport and sidebar state
-    // On screens < 1024px (lg breakpoint), sidebar is always collapsed width visually
-    const isLargeScreen = window.innerWidth >= 1024;
-    const sidebarWidth = isLargeScreen && sidebarOpen
-      ? SIDEBAR_EXPANDED_WIDTH
-      : SIDEBAR_COLLAPSED_WIDTH;
+    // Get the actual board container width
+    // The flex layout already accounts for sidebar width, so we use the container's actual width
+    const boardContainer = document.querySelector('[data-testid="board-view"]')?.parentElement;
+    const containerWidth = boardContainer
+      ? boardContainer.clientWidth
+      : window.innerWidth;
 
-    // Get the available width (window width minus sidebar and padding)
-    const availableWidth = window.innerWidth - sidebarWidth - padding;
+    // Get the available width (subtract padding only)
+    const availableWidth = containerWidth - padding;
 
     // Calculate total gap space needed
     const totalGapWidth = gap * (columnCount - 1);
@@ -79,7 +71,7 @@ export function useResponsiveKanban(
     idealWidth = Math.max(columnMinWidth, Math.min(columnMaxWidth, idealWidth));
 
     return idealWidth;
-  }, [columnCount, columnMinWidth, columnMaxWidth, gap, padding, sidebarOpen]);
+  }, [columnCount, columnMinWidth, columnMaxWidth, gap, padding]);
 
   const [columnWidth, setColumnWidth] = useState<number>(() =>
     calculateColumnWidth()

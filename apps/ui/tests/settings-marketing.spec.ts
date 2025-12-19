@@ -96,6 +96,14 @@ test.describe("Settings Marketing Content Tests", () => {
     await page.goto("/board");
     await waitForNetworkIdle(page);
 
+    // Wait for Zustand store to rehydrate from localStorage
+    await page.waitForFunction(() => {
+      const storage = localStorage.getItem('automaker-storage');
+      if (!storage) return false;
+      const parsed = JSON.parse(storage);
+      return parsed.state?.hideMarketingContent === true;
+    });
+
     // Course promo badge should now be hidden
     const promoBadge = page.locator('[data-testid="course-promo-badge"]');
     await expect(promoBadge).not.toBeVisible({ timeout: 5000 });
