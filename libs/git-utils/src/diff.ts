@@ -57,20 +57,11 @@ export async function generateSyntheticDiffForNewFile(
   const fullPath = path.join(basePath, cleanPath);
 
   try {
-    // Check if it's a binary file
-    if (isBinaryFile(cleanPath)) {
-      return `diff --git a/${cleanPath} b/${cleanPath}
-new file mode 100644
-index 0000000..0000000
-Binary file ${cleanPath} added
-`;
-    }
-
     // Get file stats to check size and type
     const stats = await secureFs.stat(fullPath);
 
-    // Check if it's a directory (can happen with untracked directories from git status)
-    // If so, recursively list all files and generate diffs for each
+    // Check if it's a directory first (before binary check)
+    // This handles edge cases like directories named "images.png/"
     if (stats.isDirectory()) {
       const filesInDir = await listAllFilesInDirectory(basePath, cleanPath);
       if (filesInDir.length === 0) {
@@ -84,6 +75,15 @@ Binary file ${cleanPath} added
         diffs.push(await generateSyntheticDiffForNewFile(basePath, filePath));
       }
       return diffs.join('');
+    }
+
+    // Check if it's a binary file (after directory check to handle dirs with binary extensions)
+    if (isBinaryFile(cleanPath)) {
+      return `diff --git a/${cleanPath} b/${cleanPath}
+new file mode 100644
+index 0000000..0000000
+Binary file ${cleanPath} added
+`;
     }
 
     if (stats.size > MAX_SYNTHETIC_DIFF_SIZE) {
