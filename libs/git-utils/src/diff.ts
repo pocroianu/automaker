@@ -89,9 +89,7 @@ Binary file ${cleanPath} added
     const fileSize = Number(stats.size);
     if (fileSize > MAX_SYNTHETIC_DIFF_SIZE) {
       const sizeKB = Math.round(fileSize / 1024);
-      return createNewFileDiff(relativePath, '100644', [
-        `[File too large to display: ${sizeKB}KB]`,
-      ]);
+      return createNewFileDiff(cleanPath, '100644', [`[File too large to display: ${sizeKB}KB]`]);
     }
 
     // Read file content

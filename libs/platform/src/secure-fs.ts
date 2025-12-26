@@ -45,11 +45,18 @@ let fsLimit = pLimit(config.maxConcurrency);
  * @param newConfig - Partial configuration to merge with defaults
  */
 export function configureThrottling(newConfig: Partial<ThrottleConfig>): void {
-  config = { ...config, ...newConfig };
-  // Recreate the limiter if concurrency changed
-  if (newConfig.maxConcurrency !== undefined) {
-    fsLimit = pLimit(config.maxConcurrency);
+  const newConcurrency = newConfig.maxConcurrency;
+
+  if (newConcurrency !== undefined && newConcurrency !== config.maxConcurrency) {
+    if (fsLimit.activeCount > 0 || fsLimit.pendingCount > 0) {
+      throw new Error(
+        `[SecureFS] Cannot change maxConcurrency while operations are in flight. Active: ${fsLimit.activeCount}, Pending: ${fsLimit.pendingCount}`
+      );
+    }
+    fsLimit = pLimit(newConcurrency);
   }
+
+  config = { ...config, ...newConfig };
 }
 
 /**
