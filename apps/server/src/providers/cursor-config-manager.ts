@@ -6,7 +6,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { CursorCliConfig, CursorModelId } from '@automaker/types';
+import { getAllCursorModelIds, type CursorCliConfig, type CursorModelId } from '@automaker/types';
 import { createLogger } from '@automaker/utils';
 import { getAutomakerDir } from '@automaker/platform';
 
@@ -42,10 +42,10 @@ export class CursorConfigManager {
       logger.warn('Failed to load config:', error);
     }
 
-    // Return default config
+    // Return default config with all available models
     return {
       defaultModel: 'auto',
-      models: ['auto', 'claude-sonnet-4', 'gpt-4o-mini'],
+      models: getAllCursorModelIds(),
     };
   }
 
@@ -175,7 +175,7 @@ export class CursorConfigManager {
   reset(): void {
     this.config = {
       defaultModel: 'auto',
-      models: ['auto', 'claude-sonnet-4', 'gpt-4o-mini'],
+      models: getAllCursorModelIds(),
     };
     this.saveConfig();
     logger.info('Config reset to defaults');
