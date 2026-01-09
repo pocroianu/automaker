@@ -77,11 +77,28 @@ export interface McpHttpServerConfig {
 }
 
 /**
+ * Subagent definition for specialized task delegation
+ */
+export interface AgentDefinition {
+  /** Natural language description of when to use this agent */
+  description: string;
+  /** System prompt defining the agent's role and behavior */
+  prompt: string;
+  /** Restricted tool list (if omitted, inherits all tools) */
+  tools?: string[];
+  /** Model override for this agent */
+  model?: 'sonnet' | 'opus' | 'haiku' | 'inherit';
+}
+
+/**
  * Options for executing a query via a provider
  */
 export interface ExecuteOptions {
   prompt: string | Array<{ type: string; text?: string; source?: object }>;
+  /** Bare model ID without provider prefix (e.g., "gpt-5.1-codex-max", "composer-1") */
   model: string;
+  /** Original model ID with provider prefix for logging (e.g., "codex-gpt-5.1-codex-max") */
+  originalModel?: string;
   cwd: string;
   systemPrompt?: string | SystemPromptPreset;
   maxTurns?: number;
@@ -107,6 +124,11 @@ export interface ExecuteOptions {
    * Only applies to Claude models; Cursor models handle thinking internally.
    */
   thinkingLevel?: ThinkingLevel;
+  /**
+   * Custom subagents for specialized task delegation
+   * Key: agent name, Value: agent definition
+   */
+  agents?: Record<string, AgentDefinition>;
   /**
    * Reasoning effort for Codex/OpenAI models with reasoning capabilities.
    * Controls how many reasoning tokens the model generates before responding.

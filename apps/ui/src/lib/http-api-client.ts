@@ -23,8 +23,6 @@ import type {
   SpecRegenerationEvent,
   SuggestionType,
   GitHubAPI,
-  GitHubIssue,
-  GitHubPR,
   IssueValidationInput,
   IssueValidationEvent,
   IdeationAPI,
@@ -374,7 +372,13 @@ export const verifySession = async (): Promise<boolean> => {
     'Content-Type': 'application/json',
   };
 
-  // Add session token header if available
+  // Electron mode: use API key header
+  const apiKey = getApiKey();
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+  }
+
+  // Add session token header if available (web mode)
   const sessionToken = getSessionToken();
   if (sessionToken) {
     headers['X-Session-Token'] = sessionToken;
@@ -1877,6 +1881,26 @@ export class HttpApiClient implements ElectronAPI {
       migratedProjectCount: number;
       errors: string[];
     }> => this.post('/api/settings/migrate', { data }),
+
+    // Filesystem agents discovery (read-only)
+    discoverAgents: (
+      projectPath?: string,
+      sources?: Array<'user' | 'project'>
+    ): Promise<{
+      success: boolean;
+      agents?: Array<{
+        name: string;
+        definition: {
+          description: string;
+          prompt: string;
+          tools?: string[];
+          model?: 'sonnet' | 'opus' | 'haiku' | 'inherit';
+        };
+        source: 'user' | 'project';
+        filePath: string;
+      }>;
+      error?: string;
+    }> => this.post('/api/settings/agents/discover', { projectPath, sources }),
   };
 
   // Sessions API

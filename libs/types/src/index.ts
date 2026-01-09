@@ -17,6 +17,7 @@ export type {
   McpStdioServerConfig,
   McpSSEServerConfig,
   McpHttpServerConfig,
+  AgentDefinition,
   ReasoningEffort,
 } from './provider.js';
 
@@ -189,6 +190,7 @@ export {
   addProviderPrefix,
   getBareModelId,
   normalizeModelString,
+  validateBareModelId,
 } from './provider-utils.js';
 
 // Pipeline types
