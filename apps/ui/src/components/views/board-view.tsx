@@ -60,7 +60,7 @@ import { CreatePRDialog } from './board-view/dialogs/create-pr-dialog';
 import { CreateBranchDialog } from './board-view/dialogs/create-branch-dialog';
 import { WorktreePanel } from './board-view/worktree-panel';
 import type { PRInfo, WorktreeInfo } from './board-view/worktree-panel/types';
-import { COLUMNS } from './board-view/constants';
+import { COLUMNS, getColumnsWithPipeline } from './board-view/constants';
 import {
   useBoardFeatures,
   useBoardDragDrop,
@@ -72,8 +72,9 @@ import {
   useBoardPersistence,
   useFollowUpState,
   useSelectionMode,
+  useListViewState,
 } from './board-view/hooks';
-import { SelectionActionBar } from './board-view/components';
+import { SelectionActionBar, ListView } from './board-view/components';
 import { MassEditDialog } from './board-view/dialogs';
 import { InitScriptIndicator } from './board-view/init-script-indicator';
 import { useInitScriptEvents } from '@/hooks/use-init-script-events';
@@ -193,6 +194,15 @@ export function BoardView() {
     exitSelectionMode,
   } = useSelectionMode();
   const [showMassEditDialog, setShowMassEditDialog] = useState(false);
+
+  // View mode state (kanban vs list)
+  const {
+    viewMode,
+    setViewMode,
+    isListView,
+    sortConfig,
+    setSortColumn,
+  } = useListViewState();
 
   // Search filter for Kanban cards
   const [searchQuery, setSearchQuery] = useState('');
@@ -1038,6 +1048,17 @@ export function BoardView() {
     projectPath: currentProject?.path || null,
   });
 
+  // Build columnFeaturesMap for ListView
+  const pipelineConfig = currentProject?.path ? pipelineConfigByProject[currentProject.path] || null : null;
+  const columnFeaturesMap = useMemo(() => {
+    const columns = getColumnsWithPipeline(pipelineConfig);
+    const map: Record<string, typeof hookFeatures> = {};
+    for (const column of columns) {
+      map[column.id] = getColumnFeatures(column.id as any);
+    }
+    return map;
+  }, [pipelineConfig, getColumnFeatures]);
+
   // Use background hook
   const { backgroundSettings, backgroundImageStyle } = useBoardBackground({
     currentProject,
@@ -1225,6 +1246,8 @@ export function BoardView() {
         onShowBoardBackground={() => setShowBoardBackgroundModal(true)}
         onShowCompletedModal={() => setShowCompletedModal(true)}
         completedCount={completedFeatures.length}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
       {/* Worktree Panel - conditionally rendered based on visibility setting */}
@@ -1263,48 +1286,83 @@ export function BoardView() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* View Content - Kanban Board */}
-        <KanbanBoard
-          sensors={sensors}
-          collisionDetectionStrategy={collisionDetectionStrategy}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          activeFeature={activeFeature}
-          getColumnFeatures={getColumnFeatures}
-          backgroundImageStyle={backgroundImageStyle}
-          backgroundSettings={backgroundSettings}
-          onEdit={(feature) => setEditingFeature(feature)}
-          onDelete={(featureId) => handleDeleteFeature(featureId)}
-          onViewOutput={handleViewOutput}
-          onVerify={handleVerifyFeature}
-          onResume={handleResumeFeature}
-          onForceStop={handleForceStopFeature}
-          onManualVerify={handleManualVerify}
-          onMoveBackToInProgress={handleMoveBackToInProgress}
-          onFollowUp={handleOpenFollowUp}
-          onComplete={handleCompleteFeature}
-          onImplement={handleStartImplementation}
-          onViewPlan={(feature) => setViewPlanFeature(feature)}
-          onApprovePlan={handleOpenApprovalDialog}
-          onSpawnTask={(feature) => {
-            setSpawnParentFeature(feature);
-            setShowAddDialog(true);
-          }}
-          featuresWithContext={featuresWithContext}
-          runningAutoTasks={runningAutoTasks}
-          onArchiveAllVerified={() => setShowArchiveAllVerifiedDialog(true)}
-          onAddFeature={() => setShowAddDialog(true)}
-          pipelineConfig={
-            currentProject?.path ? pipelineConfigByProject[currentProject.path] || null : null
-          }
-          onOpenPipelineSettings={() => setShowPipelineSettings(true)}
-          isSelectionMode={isSelectionMode}
-          selectedFeatureIds={selectedFeatureIds}
-          onToggleFeatureSelection={toggleFeatureSelection}
-          onToggleSelectionMode={toggleSelectionMode}
-          isDragging={activeFeature !== null}
-          onAiSuggest={() => setShowPlanDialog(true)}
-        />
+        {/* View Content - Kanban Board or List View */}
+        {isListView ? (
+          <ListView
+            columnFeaturesMap={columnFeaturesMap}
+            allFeatures={hookFeatures}
+            sortConfig={sortConfig}
+            onSortChange={setSortColumn}
+            actionHandlers={{
+              onEdit: (feature) => setEditingFeature(feature),
+              onDelete: (featureId) => handleDeleteFeature(featureId),
+              onViewOutput: handleViewOutput,
+              onVerify: handleVerifyFeature,
+              onResume: handleResumeFeature,
+              onForceStop: handleForceStopFeature,
+              onManualVerify: handleManualVerify,
+              onFollowUp: handleOpenFollowUp,
+              onImplement: handleStartImplementation,
+              onComplete: handleCompleteFeature,
+              onViewPlan: (feature) => setViewPlanFeature(feature),
+              onApprovePlan: handleOpenApprovalDialog,
+              onSpawnTask: (feature) => {
+                setSpawnParentFeature(feature);
+                setShowAddDialog(true);
+              },
+            }}
+            runningAutoTasks={runningAutoTasks}
+            pipelineConfig={pipelineConfig}
+            onAddFeature={() => setShowAddDialog(true)}
+            isSelectionMode={isSelectionMode}
+            selectedFeatureIds={selectedFeatureIds}
+            onToggleFeatureSelection={toggleFeatureSelection}
+            onRowClick={handleViewOutput}
+            className="transition-opacity duration-250"
+          />
+        ) : (
+          <KanbanBoard
+            sensors={sensors}
+            collisionDetectionStrategy={collisionDetectionStrategy}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            activeFeature={activeFeature}
+            getColumnFeatures={getColumnFeatures}
+            backgroundImageStyle={backgroundImageStyle}
+            backgroundSettings={backgroundSettings}
+            onEdit={(feature) => setEditingFeature(feature)}
+            onDelete={(featureId) => handleDeleteFeature(featureId)}
+            onViewOutput={handleViewOutput}
+            onVerify={handleVerifyFeature}
+            onResume={handleResumeFeature}
+            onForceStop={handleForceStopFeature}
+            onManualVerify={handleManualVerify}
+            onMoveBackToInProgress={handleMoveBackToInProgress}
+            onFollowUp={handleOpenFollowUp}
+            onComplete={handleCompleteFeature}
+            onImplement={handleStartImplementation}
+            onViewPlan={(feature) => setViewPlanFeature(feature)}
+            onApprovePlan={handleOpenApprovalDialog}
+            onSpawnTask={(feature) => {
+              setSpawnParentFeature(feature);
+              setShowAddDialog(true);
+            }}
+            featuresWithContext={featuresWithContext}
+            runningAutoTasks={runningAutoTasks}
+            onArchiveAllVerified={() => setShowArchiveAllVerifiedDialog(true)}
+            onAddFeature={() => setShowAddDialog(true)}
+            pipelineConfig={pipelineConfig}
+            onOpenPipelineSettings={() => setShowPipelineSettings(true)}
+            isSelectionMode={isSelectionMode}
+            selectedFeatureIds={selectedFeatureIds}
+            onToggleFeatureSelection={toggleFeatureSelection}
+            onToggleSelectionMode={toggleSelectionMode}
+            viewMode={viewMode}
+            isDragging={activeFeature !== null}
+            onAiSuggest={() => setShowPlanDialog(true)}
+            className="transition-opacity duration-250"
+          />
+        )}
       </div>
 
       {/* Selection Action Bar */}
@@ -1423,7 +1481,7 @@ export function BoardView() {
         open={showPipelineSettings}
         onClose={() => setShowPipelineSettings(false)}
         projectPath={currentProject.path}
-        pipelineConfig={pipelineConfigByProject[currentProject.path] || null}
+        pipelineConfig={pipelineConfig}
         onSave={async (config) => {
           const api = getHttpApiClient();
           const result = await api.pipeline.saveConfig(currentProject.path, config);

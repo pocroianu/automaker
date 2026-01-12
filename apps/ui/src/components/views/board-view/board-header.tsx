@@ -14,6 +14,9 @@ import { PlanSettingsDialog } from './dialogs/plan-settings-dialog';
 import { getHttpApiClient } from '@/lib/http-api-client';
 import { BoardSearchBar } from './board-search-bar';
 import { BoardControls } from './board-controls';
+import { ViewToggle, type ViewMode } from './components';
+
+export type { ViewMode };
 
 interface BoardHeaderProps {
   projectPath: string;
@@ -33,6 +36,9 @@ interface BoardHeaderProps {
   onShowBoardBackground: () => void;
   onShowCompletedModal: () => void;
   completedCount: number;
+  // View toggle props
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 // Shared styles for header control containers
@@ -55,6 +61,8 @@ export function BoardHeader({
   onShowBoardBackground,
   onShowCompletedModal,
   completedCount,
+  viewMode,
+  onViewModeChange,
 }: BoardHeaderProps) {
   const [showAutoModeSettings, setShowAutoModeSettings] = useState(false);
   const [showWorktreeSettings, setShowWorktreeSettings] = useState(false);
@@ -122,6 +130,12 @@ export function BoardHeader({
           creatingSpecProjectPath={creatingSpecProjectPath}
           currentProjectPath={projectPath}
         />
+        {isMounted && (
+          <ViewToggle
+            viewMode={viewMode}
+            onViewModeChange={onViewModeChange}
+          />
+        )}
         <BoardControls
           isMounted={isMounted}
           onShowBoardBackground={onShowBoardBackground}
