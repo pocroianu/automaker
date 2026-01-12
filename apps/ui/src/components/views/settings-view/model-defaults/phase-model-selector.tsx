@@ -1195,7 +1195,9 @@ export function PhaseModelSelector({
             </div>
 
             <div className="flex items-center gap-1 ml-2">
-              {groupIsSelected && !isExpanded && <Check className="h-4 w-4 text-primary shrink-0" />}
+              {groupIsSelected && !isExpanded && (
+                <Check className="h-4 w-4 text-primary shrink-0" />
+              )}
               <ChevronRight
                 className={cn(
                   'h-4 w-4 text-muted-foreground transition-transform',
@@ -1228,7 +1230,9 @@ export function PhaseModelSelector({
                   <div className="flex flex-col items-start">
                     <span className="font-medium text-xs">{variant.label}</span>
                     {variant.description && (
-                      <span className="text-[10px] text-muted-foreground">{variant.description}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {variant.description}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -1396,6 +1400,7 @@ export function PhaseModelSelector({
       className="w-[320px] p-0"
       align={align}
       onWheel={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
       onPointerDownOutside={(e) => {
         // Only prevent close if clicking inside a nested popover (thinking level panel)
         const target = e.target as HTMLElement;
@@ -1408,7 +1413,7 @@ export function PhaseModelSelector({
         <CommandInput placeholder="Search models..." />
         <CommandList
           ref={commandListRef}
-          className="max-h-[300px] overflow-y-auto overscroll-contain"
+          className="max-h-[300px] overflow-y-auto overscroll-contain touch-pan-y"
         >
           <CommandEmpty>No model found.</CommandEmpty>
 
