@@ -1,8 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Palette, Moon, Sun } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Palette, Moon, Sun, Type } from 'lucide-react';
 import { darkThemes, lightThemes, type Theme } from '@/config/theme-options';
+import { UI_SANS_FONT_OPTIONS, UI_MONO_FONT_OPTIONS } from '@/config/ui-font-options';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app-store';
 import type { Project } from '@/lib/electron';
@@ -12,8 +20,21 @@ interface ProjectThemeSectionProps {
 }
 
 export function ProjectThemeSection({ project }: ProjectThemeSectionProps) {
-  const { theme: globalTheme, setProjectTheme } = useAppStore();
+  const {
+    theme: globalTheme,
+    setProjectTheme,
+    setProjectFontSans,
+    setProjectFontMono,
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState<'dark' | 'light'>('dark');
+  const [fontSans, setFontSansLocal] = useState<string>(project.fontFamilySans || '');
+  const [fontMono, setFontMonoLocal] = useState<string>(project.fontFamilyMono || '');
+
+  // Sync font state when project changes
+  useEffect(() => {
+    setFontSansLocal(project.fontFamilySans || '');
+    setFontMonoLocal(project.fontFamilyMono || '');
+  }, [project]);
 
   const projectTheme = project.theme as Theme | undefined;
   const hasCustomTheme = projectTheme !== undefined;
@@ -33,6 +54,18 @@ export function ProjectThemeSection({ project }: ProjectThemeSectionProps) {
       // Set project theme to current global theme
       setProjectTheme(project.id, globalTheme);
     }
+  };
+
+  const handleFontSansChange = (value: string) => {
+    setFontSansLocal(value);
+    // Empty string means default, so we pass null to clear the override
+    setProjectFontSans(project.id, value || null);
+  };
+
+  const handleFontMonoChange = (value: string) => {
+    setFontMonoLocal(value);
+    // Empty string means default, so we pass null to clear the override
+    setProjectFontMono(project.id, value || null);
   };
 
   return (
@@ -158,6 +191,63 @@ export function ProjectThemeSection({ project }: ProjectThemeSectionProps) {
             </p>
           </div>
         )}
+
+        {/* Fonts Section */}
+        <div className="space-y-4 pt-6 border-t border-border/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Type className="w-4 h-4 text-muted-foreground" />
+            <Label className="text-foreground font-medium">Fonts</Label>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2 mb-4">
+            Override the default fonts for this project. Fonts must be installed on your system.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* UI Font Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="ui-font-select" className="text-sm">
+                UI Font
+              </Label>
+              <Select value={fontSans} onValueChange={handleFontSansChange}>
+                <SelectTrigger id="ui-font-select" className="w-full">
+                  <SelectValue placeholder="Default (Geist Sans)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UI_SANS_FONT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value || 'default-sans'} value={option.value}>
+                      <span style={{ fontFamily: option.value || undefined }}>{option.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for headings, labels, and UI text
+              </p>
+            </div>
+
+            {/* Code Font Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="code-font-select" className="text-sm">
+                Code Font
+              </Label>
+              <Select value={fontMono} onValueChange={handleFontMonoChange}>
+                <SelectTrigger id="code-font-select" className="w-full">
+                  <SelectValue placeholder="Default (Geist Mono)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UI_MONO_FONT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value || 'default-mono'} value={option.value}>
+                      <span style={{ fontFamily: option.value || undefined }}>{option.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for code blocks and monospaced text
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

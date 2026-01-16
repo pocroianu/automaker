@@ -718,6 +718,12 @@ export interface ProjectSettings {
   /** Project theme (undefined = use global setting) */
   theme?: ThemeMode;
 
+  // Font Configuration (project-specific override)
+  /** UI/Sans font family override (undefined = use default Geist Sans) */
+  fontFamilySans?: string;
+  /** Code/Mono font family override (undefined = use default Geist Mono) */
+  fontFamilyMono?: string;
+
   // Worktree Management
   /** Project-specific worktree preference override */
   useWorktrees?: boolean;

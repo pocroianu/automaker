@@ -158,6 +158,8 @@ function RootLayoutContent() {
     projectHistory,
     upsertAndSetCurrentProject,
     getEffectiveTheme,
+    getEffectiveFontSans,
+    getEffectiveFontMono,
     skipSandboxWarning,
     setSkipSandboxWarning,
     fetchCodexModels,
@@ -247,6 +249,10 @@ function RootLayoutContent() {
   const effectiveTheme = getEffectiveTheme();
   // Defer the theme value to keep UI responsive during rapid hover changes
   const deferredTheme = useDeferredValue(effectiveTheme);
+
+  // Get effective fonts for the current project
+  const effectiveFontSans = getEffectiveFontSans();
+  const effectiveFontMono = getEffectiveFontMono();
 
   useEffect(() => {
     setIsMounted(true);
@@ -726,6 +732,23 @@ function RootLayoutContent() {
       root.classList.add('light');
     }
   }, [deferredTheme]);
+
+  // Apply font CSS variables for project-specific font overrides
+  useEffect(() => {
+    const root = document.documentElement;
+
+    if (effectiveFontSans) {
+      root.style.setProperty('--font-sans', effectiveFontSans);
+    } else {
+      root.style.removeProperty('--font-sans');
+    }
+
+    if (effectiveFontMono) {
+      root.style.setProperty('--font-mono', effectiveFontMono);
+    } else {
+      root.style.removeProperty('--font-mono');
+    }
+  }, [effectiveFontSans, effectiveFontMono]);
 
   // Show sandbox rejection screen if user denied the risk warning
   if (sandboxStatus === 'denied') {

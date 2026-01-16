@@ -920,6 +920,12 @@ export interface AppActions {
   getEffectiveTheme: () => ThemeMode; // Get the effective theme (project, global, or preview if set)
   setPreviewTheme: (theme: ThemeMode | null) => void; // Set preview theme for hover preview (null to clear)
 
+  // Font actions (per-project)
+  setProjectFontSans: (projectId: string, fontFamily: string | null) => void; // Set per-project UI/sans font (null to clear)
+  setProjectFontMono: (projectId: string, fontFamily: string | null) => void; // Set per-project code/mono font (null to clear)
+  getEffectiveFontSans: () => string | null; // Get effective UI font (project override or null for default)
+  getEffectiveFontMono: () => string | null; // Get effective code font (project override or null for default)
+
   // Feature actions
   setFeatures: (features: Feature[]) => void;
   updateFeature: (id: string, updates: Partial<Feature>) => void;
@@ -1732,6 +1738,67 @@ export const useAppStore = create<AppState & AppActions>()((set, get) => ({
   },
 
   setPreviewTheme: (theme) => set({ previewTheme: theme }),
+
+  // Font actions (per-project)
+  setProjectFontSans: (projectId, fontFamily) => {
+    // Update the project's fontFamilySans property
+    const projects = get().projects.map((p) =>
+      p.id === projectId
+        ? { ...p, fontFamilySans: fontFamily === null ? undefined : fontFamily }
+        : p
+    );
+    set({ projects });
+
+    // Also update currentProject if it's the same project
+    const currentProject = get().currentProject;
+    if (currentProject?.id === projectId) {
+      set({
+        currentProject: {
+          ...currentProject,
+          fontFamilySans: fontFamily === null ? undefined : fontFamily,
+        },
+      });
+    }
+  },
+
+  setProjectFontMono: (projectId, fontFamily) => {
+    // Update the project's fontFamilyMono property
+    const projects = get().projects.map((p) =>
+      p.id === projectId
+        ? { ...p, fontFamilyMono: fontFamily === null ? undefined : fontFamily }
+        : p
+    );
+    set({ projects });
+
+    // Also update currentProject if it's the same project
+    const currentProject = get().currentProject;
+    if (currentProject?.id === projectId) {
+      set({
+        currentProject: {
+          ...currentProject,
+          fontFamilyMono: fontFamily === null ? undefined : fontFamily,
+        },
+      });
+    }
+  },
+
+  getEffectiveFontSans: () => {
+    const currentProject = get().currentProject;
+    // Return the project's font override, or null for default
+    if (currentProject?.fontFamilySans) {
+      return currentProject.fontFamilySans;
+    }
+    return null;
+  },
+
+  getEffectiveFontMono: () => {
+    const currentProject = get().currentProject;
+    // Return the project's font override, or null for default
+    if (currentProject?.fontFamilyMono) {
+      return currentProject.fontFamilyMono;
+    }
+    return null;
+  },
 
   // Feature actions
   setFeatures: (features) => set({ features }),
