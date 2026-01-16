@@ -14,10 +14,10 @@ export { specOutputSchema } from '@automaker/types';
  * Handles undefined/null values by converting them to empty strings
  */
 function escapeXml(str: string | undefined | null): string {
-  if (str === undefined || str === null) {
+  if (str == null) {
     return '';
   }
-  return String(str)
+  return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

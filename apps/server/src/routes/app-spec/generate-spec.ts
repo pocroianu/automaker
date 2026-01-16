@@ -205,7 +205,14 @@ Your entire response should be valid JSON starting with { and ending with }. No 
       logger.warn('⚠️ No XML tags found, attempting JSON extraction...');
       const extractedJson = extractJson<SpecOutput>(responseText, { logger });
 
-      if (extractedJson) {
+      if (
+        extractedJson &&
+        typeof extractedJson.project_name === 'string' &&
+        typeof extractedJson.overview === 'string' &&
+        Array.isArray(extractedJson.technology_stack) &&
+        Array.isArray(extractedJson.core_capabilities) &&
+        Array.isArray(extractedJson.implemented_features)
+      ) {
         logger.info('✅ Successfully extracted JSON from response text');
         xmlContent = specToXml(extractedJson);
         logger.info(`✅ Converted extracted JSON to XML: ${xmlContent.length} chars`);
