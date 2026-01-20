@@ -27,10 +27,10 @@ export function useProjectSettingsLoader() {
   );
   const setCurrentProject = useAppStore((state) => state.setCurrentProject);
 
-  const appliedProjectRef = useRef<string | null>(null);
+  const appliedProjectRef = useRef<{ path: string; dataUpdatedAt: number } | null>(null);
 
   // Fetch project settings with React Query
-  const { data: settings } = useProjectSettings(currentProject?.path);
+  const { data: settings, dataUpdatedAt } = useProjectSettings(currentProject?.path);
 
   // Apply settings when data changes
   useEffect(() => {
@@ -39,11 +39,14 @@ export function useProjectSettingsLoader() {
     }
 
     // Prevent applying the same settings multiple times
-    if (appliedProjectRef.current === currentProject.path) {
+    if (
+      appliedProjectRef.current?.path === currentProject.path &&
+      appliedProjectRef.current?.dataUpdatedAt === dataUpdatedAt
+    ) {
       return;
     }
 
-    appliedProjectRef.current = currentProject.path;
+    appliedProjectRef.current = { path: currentProject.path, dataUpdatedAt };
     const projectPath = currentProject.path;
 
     const bg = settings.boardBackground;
@@ -109,6 +112,7 @@ export function useProjectSettingsLoader() {
   }, [
     currentProject?.path,
     settings,
+    dataUpdatedAt,
     setBoardBackground,
     setCardOpacity,
     setColumnOpacity,

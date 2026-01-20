@@ -44,8 +44,13 @@ export function RunningAgentsView() {
       const isBacklogPlan = agent.featureId.startsWith('backlog-plan:');
       if (isBacklogPlan && api.backlogPlan) {
         logger.debug('Stopping backlog plan agent', { featureId: agent.featureId });
-        await api.backlogPlan.stop();
-        refetch();
+        try {
+          await api.backlogPlan.stop();
+        } catch (error) {
+          logger.error('Failed to stop backlog plan', { featureId: agent.featureId, error });
+        } finally {
+          refetch();
+        }
         return;
       }
       // Use mutation for regular features
